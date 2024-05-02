@@ -2,59 +2,119 @@
 {
     public class Game
     {
-        public Board _board;
+        public Board Board;
 
         public Game(int dimension)
         {
-            _board = new Board(dimension);
-            SetRandomLocation();
-            SetRandomLocation();
+            Board = new Board(dimension);
         }
 
         public void Play()
         {
-            Console.WriteLine(_board.Write());
-
-            while (_board.GetGameStatus() == GameStatus.InProgress)
+            while (true)
             {
-                AskKeyMove();
-                SetRandomLocation();
-                Console.Clear();
-                Console.WriteLine(_board.Write());
+                WriteBoard();
+                switch (Board.GameStatus)
+                {
+                    case GameStatus.InProgress:
+                        WaitKeyPress();
+                        break;
+
+                    case GameStatus.GameWon:
+                        Console.WriteLine($"Congratulations you made it to {Board.Target}");
+                        var keepPlaying = WaitYesNo("Would you like to keep playing? (y/n)");
+
+                        if (keepPlaying)
+                        {
+                            Board.Target = Board.Target << 1; // double the value of previous target
+                        }
+                        else
+                        {
+                            Console.WriteLine("Thanks for playing!");
+                            return;
+                        }
+                        break;
+
+                    case GameStatus.GameOver:
+                        Console.WriteLine("Looks like you're out of moves.");
+                        var tryAgain = WaitYesNo("Try again? (y/n)");
+
+                        if (tryAgain)
+                        {
+                            Board = new Board(Board.Dimension);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Thanks for playing!");
+                            return;
+                        }
+                        break;
+                }
             }
         }
 
-        public void AskKeyMove()
+        public void WaitKeyPress()
         {
-            Console.WriteLine("Use arrow keys to move");
+            if (Board.HasStateChanged)
+            {
+                Console.WriteLine("Use arrow keys to move");
+            }
 
-            while (!ArrowKeyMove())
+            while (!HandleArrowKey())
             {
 
             }
+        }
 
-            SetRandomLocation();
+        public bool WaitYesNo(string prompt)
+        {
+            while (true)
+            {
+                Console.WriteLine(prompt);
+                var response = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(response))
+                {
+                    continue;
+                }
+
+                switch (response.ToLower())
+                {
+                    case "y":
+                    case "yes":
+                        return true;
+                    case "n":
+                    case "no":
+                        return false;
+                    default:
+                        break;
+                }
+            }
         }
 
 
-        public bool ArrowKeyMove()
+        public bool HandleArrowKey()
         {
             var readKey = Console.ReadKey();
 
             switch (readKey.Key)
             {
                 case ConsoleKey.UpArrow:
-                    _board.MoveUp();
+                    Board.MoveUp();
                     break;
+
                 case ConsoleKey.DownArrow:
-                    _board.MoveDown();
+                    Board.MoveDown();
                     break;
+
                 case ConsoleKey.LeftArrow:
-                    _board.MoveLeft();
+                    Board.MoveLeft();
                     break;
+
                 case ConsoleKey.RightArrow:
-                    _board.MoveRight();
+                    Board.MoveRight();
                     break;
+
                 default:
                     return false;
             }
@@ -62,20 +122,13 @@
             return true;
         }
 
-        private void SetRandomLocation()
+        private void WriteBoard()
         {
-            var coords = _board.GetEmptySpaces();
-
-            if (coords.Count <= 0)
+            if (Board.HasStateChanged)
             {
-                return;
+                Console.Clear();
+                Console.WriteLine(Board.Write());
             }
-
-            var randCoord = Random.Shared.Next(coords.Count);
-            var location = coords[randCoord];
-            var flip = Random.Shared.Next(0, 2);
-
-            _board[location] = flip > 0 ? 2 : 4;
         }
     }
 }

@@ -19,12 +19,20 @@
      */
     internal class Program
     {
-        static Game _board;
+        static Game _game;
 
         static void Main(string[] args)
         {
-            _board = new Game(4);
-            _board.Play();
+            if (int.TryParse(args[0], out var dimension))
+            {
+                _game = new Game(dimension);
+            }
+            else
+            {
+                _game = new Game(4);
+            }
+
+            _game.Play();
         }
     }
 }

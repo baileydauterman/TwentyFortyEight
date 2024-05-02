@@ -2,7 +2,7 @@
 {
     public static class BoardUtils
     {
-        public static void Collapse(this int[] values)
+        public static void Collapse(this int[] values, bool reverse = false)
         {
             var dimension = values.Length;
             var origin = 0;

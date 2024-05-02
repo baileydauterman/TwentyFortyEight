@@ -6,7 +6,24 @@
 
         public int Dimension { get; private set; } = 0;
 
-        public int ZeroIndexedDimension => Dimension - 1;
+        public int Target
+        {
+            get
+            {
+                return _target;
+            }
+            set
+            {
+                HasStateChanged = true;
+                _target = value;
+            }
+        }
+
+        private int _target = 2048;
+
+        public GameStatus GameStatus => GetGameStatus();
+
+        public bool HasStateChanged { get; set; } = true;
 
         public int this[Coordinate c]
         {
@@ -20,83 +37,154 @@
             }
         }
 
-        public Board(int dimension)
+        public Board(int dimension, int randomStartingLocations = 2)
         {
-            Initialize(dimension);
+            _board = new List<int[]>();
+            Initialize(dimension, randomStartingLocations);
         }
 
         public string Write()
         {
             var rows = new List<string>
             {
-                string.Empty
+                "Current Highest:\t\tTarget:",
+                $"{CurrentHighest()}\t\t\t\t{Target}",
+            string.Empty
             };
 
             foreach (var row in _board)
             {
-                rows.Add(string.Join("  ", row));
+                var str = string.Empty;
+                foreach (var value in row)
+                {
+                    if (value == 0)
+                    {
+                        str += $".  ";
+                    }
+                    else
+                    {
+                        str += $"{value}  ";
+                    }
+                }
+
+                rows.Add(str);
             }
 
-            return string.Join("\n", rows).Replace("0", ".");
+            return string.Join("\n", rows);
         }
 
+        #region Movements
 
         public void MoveUp()
         {
+            HasStateChanged = false;
+
             for (var i = 0; i < Dimension; i++)
             {
                 if (TryGetColumn(i, out var col))
                 {
+                    var copy = new int[col.Length];
+                    col.CopyTo(copy, 0);
                     col.Collapse();
+
+                    if (copy.SequenceEqual(col))
+                    {
+                        continue;
+                    }
 
                     for (var j = 0; j < Dimension; j++)
                     {
                         _board[j][i] = col[j];
                     }
+
+                    HasStateChanged = true;
                 }
             }
+
+            SetRandomLocation();
         }
 
         public void MoveDown()
         {
+            HasStateChanged = false;
+
             for (var i = 0; i < Dimension; i++)
             {
                 if (TryGetColumn(i, out var col))
                 {
+                    var copy = new int[col.Length];
+                    col.CopyTo(copy, 0);
                     col = col.Reverse().ToArray();
-                    col.Collapse();
+                    col.Collapse(true);
                     col = col.Reverse().ToArray();
 
-                    for (var j = ZeroIndexedDimension; j > -1; j--)
+                    if (copy.SequenceEqual(col))
+                    {
+                        continue;
+                    }
+
+                    for (var j = Dimension - 1; j > -1; j--)
                     {
                         _board[j][i] = col[j];
                     }
+
+                    HasStateChanged = true;
                 }
             }
+
+            SetRandomLocation();
         }
 
         public void MoveLeft()
         {
-            for (var i = 0; i < Dimension; i++)
-            {
-                var row = _board[i];
-                row.Collapse();
-                _board[i] = row;
-            }
-        }
+            HasStateChanged = false;
 
-        public void MoveRight()
-        {
             for (var i = 0; i < Dimension; i++)
             {
                 if (TryGetRow(i, out var row))
                 {
-                    row = row.Reverse().ToArray();
+                    var copy = row.Clone() as int[];
                     row.Collapse();
-                    _board[i] = row.Reverse().ToArray();
+
+                    if (copy is not null && row.SequenceEqual(copy))
+                    {
+                        continue;
+                    }
+
+                    _board[i] = row;
+                    HasStateChanged = true;
                 }
             }
+
+            SetRandomLocation();
         }
+
+        public void MoveRight()
+        {
+            HasStateChanged = false;
+            for (var i = 0; i < Dimension; i++)
+            {
+                if (TryGetRow(i, out var row))
+                {
+                    var copy = row.Clone() as int[];
+                    row = row.Reverse().ToArray();
+                    row.Collapse();
+                    row = row.Reverse().ToArray();
+
+                    if (copy is not null && row.SequenceEqual(copy))
+                    {
+                        continue;
+                    }
+
+                    _board[i] = row;
+                    HasStateChanged = true;
+                }
+            }
+
+            SetRandomLocation();
+        }
+
+        #endregion
 
         public List<Coordinate> GetEmptySpaces()
         {
@@ -122,13 +210,12 @@
 
         public GameStatus GetGameStatus()
         {
-            if (_board.Any(x => x.Any(y => y == 2048)))
+            if (ReachedTarget())
             {
                 return GameStatus.GameWon;
             }
 
-            // if there are no zeros left, you lost
-            if (!HasAvailableMoves())
+            if (!HasAvailableSpace())
             {
                 return GameStatus.GameOver;
             }
@@ -148,11 +235,9 @@
             return row.Sum() > 0;
         }
 
-
-        private void Initialize(int dimension)
+        private void Initialize(int dimension, int startLocationCount)
         {
             Dimension = dimension;
-            _board = new List<int[]>();
 
             while (dimension-- > 0)
             {
@@ -164,9 +249,40 @@
                 }
                 _board.Add(row);
             }
+
+            for (var i = 0; i <= startLocationCount; i++)
+            {
+                SetRandomLocation();
+            }
         }
 
-        private bool HasAvailableMoves()
+        private void SetRandomLocation()
+        {
+            if (!HasStateChanged)
+            {
+                return;
+            }
+
+            var coords = GetEmptySpaces();
+
+            if (coords.Count <= 0)
+            {
+                return;
+            }
+
+            var randCoord = Random.Shared.Next(coords.Count);
+            var location = coords[randCoord];
+            var flip = Random.Shared.Next(0, 2);
+
+            this[location] = flip > 0 ? 2 : 4;
+        }
+
+        private bool ReachedTarget()
+        {
+            return _board.AsParallel().WithDegreeOfParallelism(Dimension).Any(x => x.Any(y => y == Target));
+        }
+
+        private bool HasAvailableSpace()
         {
             return CheckRows() || CheckColumns();
         }
@@ -175,9 +291,11 @@
         {
             foreach (var row in _board)
             {
-                row.Collapse();
+                var copy = new int[row.Length];
+                row.CopyTo(copy, 0);
+                copy.Collapse();
 
-                if (row.Any(x => x == 0))
+                if (row.SequenceEqual(copy) || copy.Any(x => x == 0))
                 {
                     return true;
                 }
@@ -195,9 +313,12 @@
                     continue;
                 }
 
-                column.Collapse();
+                var copy = new int[column.Length];
+                column.CopyTo(copy, 0);
+                copy.Collapse();
 
-                if (column.Any(x => x == 0))
+
+                if (copy.SequenceEqual(column) || copy.Any(x => x == 0))
                 {
                     return true;
                 }
@@ -206,7 +327,17 @@
             return false;
         }
 
-        private int _largestNumber = 0;
+        private int CurrentHighest()
+        {
+            var max = 0;
+            foreach (var r in _board)
+            {
+                var temp = r.Max();
+                max = temp > max ? temp : max;
+            }
+
+            return max;
+        }
     }
 
     public class Coordinate
@@ -220,5 +351,13 @@
         InProgress,
         GameOver,
         GameWon
+    }
+
+    public enum BoardMove
+    {
+        Up,
+        Down,
+        Left,
+        Right,
     }
 }
