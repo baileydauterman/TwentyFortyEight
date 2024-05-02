@@ -339,25 +339,4 @@
             return max;
         }
     }
-
-    public class Coordinate
-    {
-        public int X { get; set; }
-        public int Y { get; set; }
-    }
-
-    public enum GameStatus
-    {
-        InProgress,
-        GameOver,
-        GameWon
-    }
-
-    public enum BoardMove
-    {
-        Up,
-        Down,
-        Left,
-        Right,
-    }
 }

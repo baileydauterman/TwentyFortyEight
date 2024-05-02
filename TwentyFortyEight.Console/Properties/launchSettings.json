@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "TwentyFortyEight": {
+    "TwentyFortyEight.Console": {
       "commandName": "Project",
       "commandLineArgs": "10"
     }

@@ -1,4 +1,4 @@
-﻿namespace TwentyFortyEight
+﻿namespace TwentyFortyEight.Console
 {
     public class Game
     {
@@ -21,7 +21,7 @@
                         break;
 
                     case GameStatus.GameWon:
-                        Console.WriteLine($"Congratulations you made it to {Board.Target}");
+                        System.Console.WriteLine($"Congratulations you made it to {Board.Target}");
                         var keepPlaying = WaitYesNo("Would you like to keep playing? (y/n)");
 
                         if (keepPlaying)
@@ -30,13 +30,13 @@
                         }
                         else
                         {
-                            Console.WriteLine("Thanks for playing!");
+                            System.Console.WriteLine("Thanks for playing!");
                             return;
                         }
                         break;
 
                     case GameStatus.GameOver:
-                        Console.WriteLine("Looks like you're out of moves.");
+                        System.Console.WriteLine("Looks like you're out of moves.");
                         var tryAgain = WaitYesNo("Try again? (y/n)");
 
                         if (tryAgain)
@@ -45,7 +45,7 @@
                         }
                         else
                         {
-                            Console.WriteLine("Thanks for playing!");
+                            System.Console.WriteLine("Thanks for playing!");
                             return;
                         }
                         break;
@@ -57,7 +57,7 @@
         {
             if (Board.HasStateChanged)
             {
-                Console.WriteLine("Use arrow keys to move");
+                System.Console.WriteLine("Use arrow keys to move");
             }
 
             while (!HandleArrowKey())
@@ -70,8 +70,8 @@
         {
             while (true)
             {
-                Console.WriteLine(prompt);
-                var response = Console.ReadLine();
+                System.Console.WriteLine(prompt);
+                var response = System.Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(response))
                 {
@@ -95,7 +95,7 @@
 
         public bool HandleArrowKey()
         {
-            var readKey = Console.ReadKey();
+            var readKey = System.Console.ReadKey();
 
             switch (readKey.Key)
             {
@@ -126,8 +126,8 @@
         {
             if (Board.HasStateChanged)
             {
-                Console.Clear();
-                Console.WriteLine(Board.Write());
+                System.Console.Clear();
+                System.Console.WriteLine(Board.Write());
             }
         }
     }
