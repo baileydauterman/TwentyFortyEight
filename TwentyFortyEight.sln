@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwentyFortyEight.Tests", "T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwentyFortyEight.Console", "TwentyFortyEight.Console\TwentyFortyEight.Console.csproj", "{4DE2404A-D6FE-42B2-ADE0-DC1C3B6A332B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwentyFortyEight.Web", "TwentyFortyEight.Web\TwentyFortyEight.Web.csproj", "{E9A9C25D-DB4A-44D6-A6AC-896E98BE48FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{4DE2404A-D6FE-42B2-ADE0-DC1C3B6A332B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DE2404A-D6FE-42B2-ADE0-DC1C3B6A332B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4DE2404A-D6FE-42B2-ADE0-DC1C3B6A332B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9A9C25D-DB4A-44D6-A6AC-896E98BE48FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9A9C25D-DB4A-44D6-A6AC-896E98BE48FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9A9C25D-DB4A-44D6-A6AC-896E98BE48FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9A9C25D-DB4A-44D6-A6AC-896E98BE48FD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

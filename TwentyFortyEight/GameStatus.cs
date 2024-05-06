@@ -6,6 +6,7 @@
         GameOver,
         GameWon
     }
+
     public enum BoardMove
     {
         Up,
@@ -13,5 +14,4 @@
         Left,
         Right,
     }
-
 }

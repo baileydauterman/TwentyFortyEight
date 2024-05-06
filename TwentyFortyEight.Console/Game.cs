@@ -97,29 +97,13 @@
         {
             var readKey = System.Console.ReadKey();
 
-            switch (readKey.Key)
+            if (readKey.Key.TryConvertConsoleKeyToBoardMove(out var move))
             {
-                case ConsoleKey.UpArrow:
-                    Board.MoveUp();
-                    break;
-
-                case ConsoleKey.DownArrow:
-                    Board.MoveDown();
-                    break;
-
-                case ConsoleKey.LeftArrow:
-                    Board.MoveLeft();
-                    break;
-
-                case ConsoleKey.RightArrow:
-                    Board.MoveRight();
-                    break;
-
-                default:
-                    return false;
+                Board.Move(move);
+                return true;
             }
 
-            return true;
+            return false;
         }
 
         private void WriteBoard()

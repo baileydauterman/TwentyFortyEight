@@ -6,6 +6,8 @@
 
         public int Dimension { get; private set; } = 0;
 
+        public int HighestNumber => CurrentHighest();
+
         public int Target
         {
             get
@@ -43,15 +45,82 @@
             Initialize(dimension, randomStartingLocations);
         }
 
+        /// <summary>
+        /// Enumerates over the board from right to left top row to bottom row
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<int> Enumerate()
+        {
+            for (var i = 0; i< Dimension; i++)
+            {
+                for (var j = 0; j< Dimension; j++)
+                {
+                    var coord = new Coordinate
+                    {
+                        X = i,
+                        Y = j,
+                    };
+
+                    yield return this[coord];
+                }
+            }
+        }
+
+        public IEnumerable<BoardCell> EnumerateCells()
+        {
+            for (var i = 0; i < Dimension; i++)
+            {
+                for (var j = 0; j < Dimension; j++)
+                {
+                    var coord = new Coordinate
+                    {
+                        X = i,
+                        Y = j,
+                    };
+
+                    yield return new BoardCell
+                    {
+                        Coordinate = coord,
+                        Value = this[coord]
+                    };
+                }
+            }
+        }
+
+        public IEnumerable<BoardCell> GetRow(int i)
+        {
+            var row = _board[i];
+            var y = 0;
+            foreach (var cell in row)
+            {
+                yield return new BoardCell
+                {
+                    Coordinate = new Coordinate
+                    {
+                        X = i,
+                        Y = y++,
+                    },
+                    Value = cell,
+                };
+            }
+        }
+
         public string Write()
         {
             var rows = new List<string>
             {
                 "Current Highest:\t\tTarget:",
                 $"{CurrentHighest()}\t\t\t\t{Target}",
-            string.Empty
+                string.Empty,
+                this.ToString(),
             };
 
+            return string.Join("\n", rows);
+        }
+
+        public override string ToString()
+        {
+            var rows = new List<string>();
             foreach (var row in _board)
             {
                 var str = string.Empty;
@@ -74,6 +143,27 @@
         }
 
         #region Movements
+        public void Move(BoardMove move)
+        {
+            switch (move)
+            {
+                case BoardMove.Up:
+                    MoveUp();
+                    break;
+
+                case BoardMove.Down:
+                    MoveDown();
+                    break;
+
+                case BoardMove.Left:
+                    MoveLeft();
+                    break;
+
+                case BoardMove.Right:
+                    MoveRight();
+                    break;
+            }
+        }
 
         public void MoveUp()
         {
@@ -250,7 +340,7 @@
                 _board.Add(row);
             }
 
-            for (var i = 0; i <= startLocationCount; i++)
+            for (var i = 1; i <= startLocationCount; i++)
             {
                 SetRandomLocation();
             }
@@ -338,5 +428,12 @@
 
             return max;
         }
+    }
+
+    public class BoardCell
+    {
+        public Coordinate Coordinate { get; set; } = new Coordinate();
+
+        public int Value { get; set; }
     }
 }

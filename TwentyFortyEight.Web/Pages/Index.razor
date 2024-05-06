@@ -1,0 +1,127 @@
+﻿@page "/"
+
+<PageTitle>2048</PageTitle>
+
+<div @ref="gameAreaRef" class="container" tabindex="0" @onkeydown="@HandleKeyPress">
+    <div class="row">
+        <div class="col-4">
+            Highest Score: @(GameBoard?.HighestNumber)
+        </div>
+
+        <div class="col-4">
+            Target: @(GameBoard?.Target)
+        </div>
+
+        <div class="col-4">
+            Last Move: @(LastMove)
+        </div>
+    </div>
+    @{
+        for (var i = 0; i < GameBoard?.Dimension; i++)
+        {
+            <div class="hstack gap-3 pb-3">
+                @{
+                    foreach (var cell in GameBoard.GetRow(i))
+                    {
+                        <div class="pb-1 pt-3 ps-4 pe-4 fs-4" style="background: @(BackgroundColors[cell.Value])">
+                            <p>@cell.Value</p>
+                        </div>
+                    }
+
+                }
+            </div>
+        }
+    }
+</div>
+
+@code{
+    public Board? GameBoard = null;
+
+    public string LastMove = string.Empty;
+
+    private Queue<BoardMove> _queuedMoves = new Queue<BoardMove>();
+
+    private bool _isDequeing = false;
+
+    private ElementReference gameAreaRef;
+
+    protected override Task OnInitializedAsync()
+    {
+        GameBoard = new Board(10);
+        return base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await gameAreaRef.FocusAsync();
+        }
+    }
+
+    private void HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (GameBoard is null)
+        {
+            return;
+        }
+
+        if (e.Key.TryConvertWebKeyToBoardMoveType(out var moveType))
+        {
+            _queuedMoves.Enqueue(moveType);
+
+            if (!_isDequeing)
+            {
+                HandledQueuedInput();
+            }
+        }
+    }
+
+    private async void HandledQueuedInput()
+    {
+        _isDequeing = true;
+
+        while (true)
+        {
+            if (_queuedMoves.TryDequeue(out var move))
+            {
+                GameBoard?.Move(move);
+                LastMove = move.ToString();
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        _isDequeing = false;
+    }
+
+    private static readonly Dictionary<int, string> BackgroundColors = new Dictionary<int, string>()
+{
+        { 0, "#c8c8c8" },
+        { 2, "#C5E6A6" },
+        { 2 << 1, "#BDD2A6" },
+        { 2 << 2, "#B9BEA5" },
+        { 2 << 3, "#A7AAA4" },
+        { 2 << 4, "#9899A6" },
+        { 2 << 5, "#c8c8c8" },
+        { 2 << 6, "#C5E6A6" },
+        { 2 << 7, "#BDD2A6" },
+        { 2 << 8, "#B9BEA5" },
+        { 2 << 9, "#A7AAA4" },
+        { 2 << 10, "#9899A6" },
+        { 2 << 11, "#c8c8c8" },
+        { 2 << 12, "#C5E6A6" },
+        { 2 << 13, "#BDD2A6" },
+        { 2 << 14, "#B9BEA5" },
+        { 2 << 15, "#A7AAA4" },
+        { 2 << 16, "#9899A6" },
+        { 2 << 17, "#c8c8c8" },
+        { 2 << 18, "#C5E6A6" },
+        { 2 << 19, "#BDD2A6" },
+        { 2 << 20, "#B9BEA5" },
+        { 2 << 21, "#A7AAA4" },
+        { 2 << 22, "#9899A6" },
+    };
+}
