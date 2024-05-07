@@ -2,39 +2,55 @@
 
 <PageTitle>2048</PageTitle>
 
-<div @ref="gameAreaRef" class="container" tabindex="0" @onkeydown="@HandleKeyPress">
+<div class="container">
     <div class="row">
-        <div class="col-4">
-            Highest Score: @(GameBoard?.HighestNumber)
-        </div>
+        <div class="col-2">
+            <div class="vstack gap-1">
+                <span>
+                    Last Move: @(GameBoard?.Score)
+                </span>
 
-        <div class="col-4">
-            Target: @(GameBoard?.Target)
-        </div>
+                <span>
+                    Highest Score: @(GameBoard?.HighestNumber)
+                </span>
 
-        <div class="col-4">
-            Last Move: @(LastMove)
+                <span>
+                    Target: @(GameBoard?.Target)
+                </span>
+
+                <span>
+                    Last Move: @(LastMove)
+                </span>
+
+                <div class="input-group mb-3">
+                    <span class="input-group-text" id="inputGroup-sizing-default">Board Size</span>
+                    <input type="text" class="form-control" aria-describedby="inputGroup-sizing-default" @bind=@boardSize @oninput=ValidateBoardSize>
+                </div>
+            </div>
+        </div>
+        <div @ref="gameAreaRef" class="col" tabindex="0" @onkeydown="@HandleKeyPress">
+            @{
+                for (var i = 0; i < GameBoard?.Dimension; i++)
+                {
+                    <div class="hstack gap-1">
+                        @{
+                            foreach (var cell in GameBoard.GetRow(i))
+                            {
+                                var classValue = cell.Value == 0 ? $"{_cellStyling} text-secondary" : _cellStyling;
+                                <span class=@classValue style="background: @(BackgroundColors[cell.Value])">
+                                    @cell.Value
+                                </span>
+                            }
+                        }
+                    </div>
+                }
+            }
         </div>
     </div>
-    @{
-        for (var i = 0; i < GameBoard?.Dimension; i++)
-        {
-            <div class="hstack gap-3 pb-3">
-                @{
-                    foreach (var cell in GameBoard.GetRow(i))
-                    {
-                        <div class="pb-1 pt-3 ps-4 pe-4 fs-4" style="background: @(BackgroundColors[cell.Value])">
-                            <p>@cell.Value</p>
-                        </div>
-                    }
-
-                }
-            </div>
-        }
-    }
 </div>
 
-@code{
+
+@code {
     public Board? GameBoard = null;
 
     public string LastMove = string.Empty;
@@ -45,9 +61,13 @@
 
     private ElementReference gameAreaRef;
 
+    private int boardSize = 4;
+
+    private const string _cellStyling = "p-2 fs-4 font-monospace";
+
     protected override Task OnInitializedAsync()
     {
-        GameBoard = new Board(10);
+        GameBoard = new Board(boardSize);
         return base.OnInitializedAsync();
     }
 
@@ -97,9 +117,31 @@
         _isDequeing = false;
     }
 
+    private void ValidateBoardSize(ChangeEventArgs e)
+    {
+        var updated = false;
+        if (string.IsNullOrWhiteSpace(e.Value?.ToString()))
+        {
+            boardSize = 4;
+            updated = true;
+        }
+
+        if (int.TryParse(e.Value?.ToString(), out boardSize))
+        {
+            updated = true;
+        }
+        
+        if (updated)
+        {
+            GameBoard = new Board(boardSize);
+            InvokeAsync(() => StateHasChanged());
+
+        }
+    }
+
     private static readonly Dictionary<int, string> BackgroundColors = new Dictionary<int, string>()
 {
-        { 0, "#c8c8c8" },
+        { 0, "#1d1f20" },
         { 2, "#C5E6A6" },
         { 2 << 1, "#BDD2A6" },
         { 2 << 2, "#B9BEA5" },

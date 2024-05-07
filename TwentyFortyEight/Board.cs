@@ -8,6 +8,8 @@
 
         public int HighestNumber => CurrentHighest();
 
+        public int Score = 0;
+
         public int Target
         {
             get
@@ -51,9 +53,9 @@
         /// <returns></returns>
         public IEnumerable<int> Enumerate()
         {
-            for (var i = 0; i< Dimension; i++)
+            for (var i = 0; i < Dimension; i++)
             {
-                for (var j = 0; j< Dimension; j++)
+                for (var j = 0; j < Dimension; j++)
                 {
                     var coord = new Coordinate
                     {
@@ -145,37 +147,49 @@
         #region Movements
         public void Move(BoardMove move)
         {
+            HasStateChanged = false;
+
             switch (move)
             {
                 case BoardMove.Up:
-                    MoveUp();
+                    MoveColumn();
                     break;
 
                 case BoardMove.Down:
-                    MoveDown();
+                    MoveColumn(true);
                     break;
 
                 case BoardMove.Left:
-                    MoveLeft();
+                    MoveRow();
                     break;
 
                 case BoardMove.Right:
-                    MoveRight();
+                    MoveRow(true);
                     break;
             }
+
+            SetRandomLocation();
         }
 
-        public void MoveUp()
+        private void MoveColumn(bool reverse = false)
         {
-            HasStateChanged = false;
-
             for (var i = 0; i < Dimension; i++)
             {
                 if (TryGetColumn(i, out var col))
                 {
                     var copy = new int[col.Length];
                     col.CopyTo(copy, 0);
-                    col.Collapse();
+
+                    if (reverse)
+                    {
+                        col = col.Reverse().ToArray();
+                        col.Collapse();
+                        col = col.Reverse().ToArray();
+                    }
+                    else
+                    {
+                        col.Collapse();
+                    }
 
                     if (copy.SequenceEqual(col))
                     {
@@ -190,53 +204,29 @@
                     HasStateChanged = true;
                 }
             }
-
-            SetRandomLocation();
         }
 
-        public void MoveDown()
+        private void MoveRow(bool reverse = false)
         {
-            HasStateChanged = false;
-
-            for (var i = 0; i < Dimension; i++)
-            {
-                if (TryGetColumn(i, out var col))
-                {
-                    var copy = new int[col.Length];
-                    col.CopyTo(copy, 0);
-                    col = col.Reverse().ToArray();
-                    col.Collapse(true);
-                    col = col.Reverse().ToArray();
-
-                    if (copy.SequenceEqual(col))
-                    {
-                        continue;
-                    }
-
-                    for (var j = Dimension - 1; j > -1; j--)
-                    {
-                        _board[j][i] = col[j];
-                    }
-
-                    HasStateChanged = true;
-                }
-            }
-
-            SetRandomLocation();
-        }
-
-        public void MoveLeft()
-        {
-            HasStateChanged = false;
-
             for (var i = 0; i < Dimension; i++)
             {
                 if (TryGetRow(i, out var row))
                 {
-                    var copy = row.Clone() as int[];
-                    row.Collapse();
+                    var copy = new int[row.Length];
+                    row.CopyTo(copy, 0);
 
-                    if (copy is not null && row.SequenceEqual(copy))
+                    if (reverse)
+                    {
+                        row = row.Reverse().ToArray();
+                        row.Collapse();
+                        row = row.Reverse().ToArray();
+                    }
+                    else
+                    {
+                        row.Collapse();
+                    }
+
+                    if (row.SequenceEqual(copy))
                     {
                         continue;
                     }
@@ -245,33 +235,6 @@
                     HasStateChanged = true;
                 }
             }
-
-            SetRandomLocation();
-        }
-
-        public void MoveRight()
-        {
-            HasStateChanged = false;
-            for (var i = 0; i < Dimension; i++)
-            {
-                if (TryGetRow(i, out var row))
-                {
-                    var copy = row.Clone() as int[];
-                    row = row.Reverse().ToArray();
-                    row.Collapse();
-                    row = row.Reverse().ToArray();
-
-                    if (copy is not null && row.SequenceEqual(copy))
-                    {
-                        continue;
-                    }
-
-                    _board[i] = row;
-                    HasStateChanged = true;
-                }
-            }
-
-            SetRandomLocation();
         }
 
         #endregion
