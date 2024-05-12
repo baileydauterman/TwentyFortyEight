@@ -12,7 +12,7 @@
             return ConsoleKeyToBoardMove.TryGetValue(key, out move);
         }
 
-        private static readonly Dictionary<string, BoardMove> KeyToBoardMove = new Dictionary<string, BoardMove>()
+        private static readonly Dictionary<string, BoardMove> KeyToBoardMove = new()
         {
             { "ArrowUp", BoardMove.Up },
             { "ArrowDown", BoardMove.Down },
@@ -20,7 +20,7 @@
             { "ArrowLeft", BoardMove.Left }
         };
 
-        private static readonly Dictionary<ConsoleKey, BoardMove> ConsoleKeyToBoardMove = new Dictionary<ConsoleKey, BoardMove>()
+        private static readonly Dictionary<ConsoleKey, BoardMove> ConsoleKeyToBoardMove = new()
         {
             { ConsoleKey.UpArrow, BoardMove.Up },
             { ConsoleKey.DownArrow, BoardMove.Down },

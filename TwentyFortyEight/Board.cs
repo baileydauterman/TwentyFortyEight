@@ -25,7 +25,7 @@
 
         private int _target = 2048;
 
-        private readonly Random _random;
+        private readonly Random _random = Random.Shared;
 
         public GameStatus GameStatus => GetGameStatus();
 
@@ -43,9 +43,20 @@
             }
         }
 
+        public Board(SaveState state)
+        {
+            _board = state.Board;
+            Score = state.Score;
+            Dimension = _board.Count;
+        }
+
         public Board(int dimension, int randomStartingLocations = 2, int? seed = null)
         {
-            _random = !seed.HasValue ? Random.Shared : new Random(seed.Value);
+            if (seed is not null)
+            {
+                _random = new Random(seed.Value);
+            }
+
             _board = new List<int[]>();
             Initialize(dimension, randomStartingLocations);
         }
@@ -349,7 +360,7 @@
 
         public SaveState Save()
         {
-            return new SaveState(_board);
+            return new SaveState(_board, Score);
         }
 
         private bool TryGetColumn(int index, out int[] column)

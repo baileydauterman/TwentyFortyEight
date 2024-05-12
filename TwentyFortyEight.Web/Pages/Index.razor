@@ -1,11 +1,13 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedLocalStorage ProtectedLocalStorage;
 
 <PageTitle>2048</PageTitle>
 
-<div class="container">
+<div class="@containerClass">
     <div class="row">
         <div class="col-6">
-            <div class="hstack">
+            <div class="hstack gap-2">
                 <div class="vstack">
                     <span class="fw-bold font-monospace">
                         Score
@@ -42,37 +44,37 @@
                     </span>
                 </div>
 
-                <div class="form-floating mb-3">
-                    <input type="text" class="form-control" aria-describedby="inputGroup-sizing-default" @bind=@boardSize @oninput=ValidateBoardSize>
+                <div class="form-floating">
+                    <input type="text" class="form-control" aria-describedby="inputGroup-sizing-default" @bind=@boardSize disabled>
                     <label for="inputGroup-sizing-default">Board Size</label>
+                    <input type="range" class="form-range" min="4" max="16" id="customRange2" value="@boardSize" @onchange=ValidateBoardSize>
                 </div>
 
-                @* <div class="input-group mb-3">
-                    <span class="input-group-text" id="inputGroup-sizing-default">Board Size</span>
-                    <input type="text" class="form-control" aria-describedby="inputGroup-sizing-default" @bind=@boardSize @oninput=ValidateBoardSize>
-                </div> *@
+                <button type="button" class="btn btn-secondary" @onclick=Reset>Reset</button>
             </div>
         </div>
-        <div class="row d-flex justify-content-center">
-            <div @ref="gameAreaRef" class="col p-2" tabindex="0" @onkeydown="@HandleKeyPress">
-                @{
-                    for (var i = 0; i < GameBoard?.Dimension; i++)
-                    {
-                        <div class="hstack gap-1 pb-1">
-                            @{
-                                foreach (var cell in GameBoard.GetRow(i))
-                                {
-                                    var classValue = cell.Value == 0 ? $"{_cellStyling} text-secondary" : $"{_cellStyling} text-dark";
-                                    <div class="@classValue" style="background: @(BackgroundColors[cell.Value]); width: 107px; height: 107px; font-size: @(FontSize[cell.Value]); border-radius: 8px;">
-                                        <span class="pt-2">
-                                            @cell.Value
-                                        </span>
-                                    </div>
+        <div class="h-100 d-flex align-items-center justify-content-center p-48">
+            <div class="row">
+                <div @ref="gameAreaRef" class="col p-2" tabindex="0" @onkeydown="@HandleKeyPress">
+                    @{
+                        for (var i = 0; i < GameBoard?.Dimension; i++)
+                        {
+                            <div class="hstack gap-1 pb-1">
+                                @{
+                                    foreach (var cell in GameBoard.GetRow(i))
+                                    {
+                                        var classValue = cell.Value == 0 ? $"{_cellStyling} text-secondary" : $"{_cellStyling} text-dark";
+                                        <div class="@classValue" style="background: @(BackgroundColors[cell.Value]); width: 107px; height: 107px; font-size: @(FontSize[cell.Value]); border-radius: 8px;">
+                                            <span class="pt-2">
+                                                @cell.Value
+                                            </span>
+                                        </div>
+                                    }
                                 }
-                            }
-                        </div>
+                            </div>
+                        }
                     }
-                }
+                </div>
             </div>
         </div>
     </div>
@@ -114,17 +116,26 @@
 
     private string modalBody => GetModalBody();
 
-    protected override Task OnInitializedAsync()
-    {
-        GameBoard = new Board(boardSize);
-        return base.OnInitializedAsync();
-    }
+    private string containerClass => GameBoard is null ? "container visually-hidden" : "container";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             await gameAreaRef.FocusAsync();
+            var state = await ProtectedLocalStorage.GetAsync<SaveState>(_localStorageKey);
+
+            if (state.Success && state.Value is not null)
+            {
+                GameBoard = new Board(state.Value);
+            }
+            else
+            {
+                GameBoard = new Board(boardSize);
+            }
+
+            boardSize = GameBoard.Dimension;
+            UpdateState(true);
         }
     }
 
@@ -138,6 +149,7 @@
         if (e.Key.TryConvertWebKeyToBoardMoveType(out var move))
         {
             GameBoard?.Move(move);
+            UpdateState(false);
             LastMove = move.ToString();
         }
     }
@@ -148,7 +160,7 @@
         if (string.IsNullOrWhiteSpace(e.Value?.ToString()))
         {
             boardSize = 4;
-            updated = true;
+            return;
         }
 
         if (int.TryParse(e.Value?.ToString(), out boardSize))
@@ -159,13 +171,42 @@
         if (updated)
         {
             GameBoard = new Board(boardSize);
-            InvokeAsync(() => StateHasChanged());
-
+            UpdateState(true);
         }
+    }
+
+    private void UpdateState(bool statehaschanged = false)
+    {
+        if (GameBoard is null)
+        {
+            return;
+        }
+
+        InvokeAsync(() =>
+        {
+            ProtectedLocalStorage.SetAsync(_localStorageKey, GameBoard.Save());
+
+            if (statehaschanged)
+            {
+                StateHasChanged();
+            }
+        });
+    }
+
+    private void Reset()
+    {
+        GameBoard = new Board(4);
+        boardSize = 4;
+        ProtectedLocalStorage.SetAsync(_localStorageKey, null);
     }
 
     private string GetModalTitle()
     {
+        if (GameBoard is null)
+        {
+            return string.Empty;
+        }
+
         switch (GameBoard.GameStatus)
         {
             case GameStatus.GameOver:
@@ -182,6 +223,11 @@
 
     private string GetModalBody()
     {
+        if (GameBoard is null)
+        {
+            return string.Empty;
+        }
+
         switch (GameBoard.GameStatus)
         {
             case GameStatus.GameOver:
@@ -195,6 +241,8 @@
                 return string.Empty;
         }
     }
+
+    private const string _localStorageKey = "2048localstorage";
 
     private static readonly Dictionary<int, string> BackgroundColors = new Dictionary<int, string>()
     {
