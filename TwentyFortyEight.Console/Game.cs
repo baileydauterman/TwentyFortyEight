@@ -1,4 +1,6 @@
-﻿namespace TwentyFortyEight.Console
+﻿using System.Text.Json;
+
+namespace TwentyFortyEight.Console
 {
     public class Game
     {
@@ -6,7 +8,17 @@
 
         public Game(int dimension)
         {
-            Board = new Board(dimension);
+            localAppData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "2048");
+            saveStatePath = Path.Combine(localAppData, "saveState.json");
+
+            if (File.Exists(saveStatePath) && TryReadSaveState(out var state))
+            {
+                Board = new Board(state);
+            }
+            else
+            {
+                Board = new Board(dimension);
+            }
         }
 
         public void Play()
@@ -100,6 +112,7 @@
             if (readKey.Key.TryConvertConsoleKeyToBoardMove(out var move))
             {
                 Board.Move(move);
+                WriteSaveState();
                 return true;
             }
 
@@ -114,5 +127,40 @@
                 System.Console.WriteLine(Board.Write());
             }
         }
+
+        private void WriteSaveState()
+        {
+            Directory.CreateDirectory(localAppData);
+            var serialized = JsonSerializer.Serialize(state);
+
+            using (var file = File.OpenWrite(saveStatePath))
+            {
+                file.SetLength(0);
+            }
+
+            File.WriteAllText(saveStatePath, serialized);
+        }
+
+        private bool TryReadSaveState(out SaveState? state)
+        {
+            state = null;
+            using (var stream = File.OpenRead(saveStatePath))
+            {
+                try
+                {
+                    state = JsonSerializer.Deserialize<SaveState>(stream);
+                }
+                catch
+                {
+
+                }
+            }
+
+            return state is not null;
+        }
+
+        private SaveState state => Board.Save();
+        private readonly string localAppData;
+        private readonly string saveStatePath;
     }
 }
