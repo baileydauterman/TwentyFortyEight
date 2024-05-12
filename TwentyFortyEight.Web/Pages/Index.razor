@@ -4,47 +4,96 @@
 
 <div class="container">
     <div class="row">
-        <div class="col-2">
-            <div class="vstack gap-1">
-                <span>
-                    Last Move: @(GameBoard?.Score)
-                </span>
+        <div class="col-6">
+            <div class="hstack">
+                <div class="vstack">
+                    <span class="fw-bold font-monospace">
+                        Score
+                    </span>
+                    <span class="font-monospace">
+                        @(GameBoard?.Score)
+                    </span>
+                </div>
 
-                <span>
-                    Highest Score: @(GameBoard?.HighestNumber)
-                </span>
+                <div class="vstack">
+                    <span class="fw-bold font-monospace">
+                        Highest Score
+                    </span>
+                    <span class="font-monospace">
+                        @(GameBoard?.HighestNumber)
+                    </span>
+                </div>
 
-                <span>
-                    Target: @(GameBoard?.Target)
-                </span>
+                <div class="vstack">
+                    <span class="fw-bold font-monospace">
+                        Target
+                    </span>
+                    <span class="font-monospace">
+                        @(GameBoard?.Target)
+                    </span>
+                </div>
 
-                <span>
-                    Last Move: @(LastMove)
-                </span>
+                <div class="vstack">
+                    <span class="fw-bold font-monospace">
+                        Last Move
+                    </span>
+                    <span class="font-monospace">
+                        @(LastMove)
+                    </span>
+                </div>
 
-                <div class="input-group mb-3">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" aria-describedby="inputGroup-sizing-default" @bind=@boardSize @oninput=ValidateBoardSize>
+                    <label for="inputGroup-sizing-default">Board Size</label>
+                </div>
+
+                @* <div class="input-group mb-3">
                     <span class="input-group-text" id="inputGroup-sizing-default">Board Size</span>
                     <input type="text" class="form-control" aria-describedby="inputGroup-sizing-default" @bind=@boardSize @oninput=ValidateBoardSize>
-                </div>
+                </div> *@
             </div>
         </div>
-        <div @ref="gameAreaRef" class="col" tabindex="0" @onkeydown="@HandleKeyPress">
-            @{
-                for (var i = 0; i < GameBoard?.Dimension; i++)
-                {
-                    <div class="hstack gap-1">
-                        @{
-                            foreach (var cell in GameBoard.GetRow(i))
-                            {
-                                var classValue = cell.Value == 0 ? $"{_cellStyling} text-secondary" : _cellStyling;
-                                <span class=@classValue style="background: @(BackgroundColors[cell.Value])">
-                                    @cell.Value
-                                </span>
+        <div class="row d-flex justify-content-center">
+            <div @ref="gameAreaRef" class="col p-2" tabindex="0" @onkeydown="@HandleKeyPress">
+                @{
+                    for (var i = 0; i < GameBoard?.Dimension; i++)
+                    {
+                        <div class="hstack gap-1 pb-1">
+                            @{
+                                foreach (var cell in GameBoard.GetRow(i))
+                                {
+                                    var classValue = cell.Value == 0 ? $"{_cellStyling} text-secondary" : $"{_cellStyling} text-dark";
+                                    <div class="@classValue" style="background: @(BackgroundColors[cell.Value]); width: 107px; height: 107px; font-size: @(FontSize[cell.Value]); border-radius: 8px;">
+                                        <span class="pt-2">
+                                            @cell.Value
+                                        </span>
+                                    </div>
+                                }
                             }
-                        }
-                    </div>
+                        </div>
+                    }
                 }
-            }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@modalTitle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@modalBody</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Restart</button>
+                    <button type="button" class="btn btn-primary">Continue Playing</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -55,15 +104,15 @@
 
     public string LastMove = string.Empty;
 
-    private Queue<BoardMove> _queuedMoves = new Queue<BoardMove>();
-
-    private bool _isDequeing = false;
-
     private ElementReference gameAreaRef;
 
     private int boardSize = 4;
 
-    private const string _cellStyling = "p-2 fs-4 font-monospace";
+    private const string _cellStyling = "font-monospace text-center align-middle";
+
+    private string modalTitle => GetModalTitle();
+
+    private string modalBody => GetModalBody();
 
     protected override Task OnInitializedAsync()
     {
@@ -86,35 +135,11 @@
             return;
         }
 
-        if (e.Key.TryConvertWebKeyToBoardMoveType(out var moveType))
+        if (e.Key.TryConvertWebKeyToBoardMoveType(out var move))
         {
-            _queuedMoves.Enqueue(moveType);
-
-            if (!_isDequeing)
-            {
-                HandledQueuedInput();
-            }
+            GameBoard?.Move(move);
+            LastMove = move.ToString();
         }
-    }
-
-    private async void HandledQueuedInput()
-    {
-        _isDequeing = true;
-
-        while (true)
-        {
-            if (_queuedMoves.TryDequeue(out var move))
-            {
-                GameBoard?.Move(move);
-                LastMove = move.ToString();
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        _isDequeing = false;
     }
 
     private void ValidateBoardSize(ChangeEventArgs e)
@@ -130,7 +155,7 @@
         {
             updated = true;
         }
-        
+
         if (updated)
         {
             GameBoard = new Board(boardSize);
@@ -139,31 +164,91 @@
         }
     }
 
+    private string GetModalTitle()
+    {
+        switch (GameBoard.GameStatus)
+        {
+            case GameStatus.GameOver:
+                return "Better Luck Next Time!";
+
+            case GameStatus.GameWon:
+                return "Congrats!";
+
+            case GameStatus.InProgress:
+            default:
+                return string.Empty;
+        }
+    }
+
+    private string GetModalBody()
+    {
+        switch (GameBoard.GameStatus)
+        {
+            case GameStatus.GameOver:
+                return $"Rats! Looks like you couldn't make it to {GameBoard.Target}. Congrats on making it to {GameBoard.HighestNumber}.\n\nWanna play again?";
+
+            case GameStatus.GameWon:
+                return $"Way to go!! You made it to {GameBoard.Target}! Wanna keep going?";
+
+            case GameStatus.InProgress:
+            default:
+                return string.Empty;
+        }
+    }
+
     private static readonly Dictionary<int, string> BackgroundColors = new Dictionary<int, string>()
-{
-        { 0, "#1d1f20" },
-        { 2, "#C5E6A6" },
-        { 2 << 1, "#BDD2A6" },
-        { 2 << 2, "#B9BEA5" },
-        { 2 << 3, "#A7AAA4" },
-        { 2 << 4, "#9899A6" },
-        { 2 << 5, "#c8c8c8" },
-        { 2 << 6, "#C5E6A6" },
-        { 2 << 7, "#BDD2A6" },
-        { 2 << 8, "#B9BEA5" },
-        { 2 << 9, "#A7AAA4" },
-        { 2 << 10, "#9899A6" },
-        { 2 << 11, "#c8c8c8" },
-        { 2 << 12, "#C5E6A6" },
-        { 2 << 13, "#BDD2A6" },
-        { 2 << 14, "#B9BEA5" },
-        { 2 << 15, "#A7AAA4" },
-        { 2 << 16, "#9899A6" },
-        { 2 << 17, "#c8c8c8" },
-        { 2 << 18, "#C5E6A6" },
-        { 2 << 19, "#BDD2A6" },
-        { 2 << 20, "#B9BEA5" },
-        { 2 << 21, "#A7AAA4" },
-        { 2 << 22, "#9899A6" },
+    {
+        { 0,       "#1D1F20" },
+        { 2,       "#0E4D64" },
+        { 2 << 1,  "#137177" },
+        { 2 << 2,  "#188977" },
+        { 2 << 3,  "#1D9A6C" },
+        { 2 << 4,  "#39A96B" },
+        { 2 << 5,  "#56B870" },
+        { 2 << 6,  "#74C67A" },
+        { 2 << 7,  "#99D492" },
+        { 2 << 8,  "#BFE1B0" },
+        { 2 << 9,  "#DEEDCF" },
+        { 2 << 10, "#1419A3" },
+        { 2 << 11, "#1649A1" },
+        { 2 << 12, "#19769E" },
+        { 2 << 13, "#1B9C98" },
+        { 2 << 14, "#1D9A6C" },
+        { 2 << 15, "#209E35" },
+        { 2 << 16, "#47A222" },
+        { 2 << 17, "#86A625" },
+        { 2 << 18, "#AA8E27" },
+        { 2 << 19, "#AE552A" },
+        { 2 << 20, "#B12D3F" },
+        { 2 << 21, "#991E72" },
+        { 2 << 22, "#6D1E99" },
+    };
+
+    private static readonly Dictionary<int, string> FontSize = new Dictionary<int, string>()
+    {
+        { 0,       "55px" },
+        { 2,       "55px" },
+        { 2 << 1,  "55px" },
+        { 2 << 2,  "55px" },
+        { 2 << 3,  "55px" },
+        { 2 << 4,  "55px" },
+        { 2 << 5,  "55px" },
+        { 2 << 6,  "55px" },
+        { 2 << 7,  "55px" },
+        { 2 << 8,  "55px" },
+        { 2 << 9,  "46px" },
+        { 2 << 10, "46px" },
+        { 2 << 11, "46px" },
+        { 2 << 12, "46px" },
+        { 2 << 13, "39px" },
+        { 2 << 14, "39px" },
+        { 2 << 15, "39px" },
+        { 2 << 16, "31px" },
+        { 2 << 17, "31px" },
+        { 2 << 18, "31px" },
+        { 2 << 19, "23px" },
+        { 2 << 20, "23px" },
+        { 2 << 21, "23px" },
+        { 2 << 22, "23px" },
     };
 }

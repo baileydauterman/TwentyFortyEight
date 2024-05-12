@@ -183,13 +183,15 @@
                     if (reverse)
                     {
                         col = col.Reverse().ToArray();
-                        col.Collapse();
+                        Collapse(col);
                         col = col.Reverse().ToArray();
                     }
                     else
                     {
-                        col.Collapse();
+                        Collapse(col);
                     }
+
+                    Score += col.Sum() - copy.Sum();
 
                     if (copy.SequenceEqual(col))
                     {
@@ -218,13 +220,15 @@
                     if (reverse)
                     {
                         row = row.Reverse().ToArray();
-                        row.Collapse();
+                        Collapse(row);
                         row = row.Reverse().ToArray();
                     }
                     else
                     {
-                        row.Collapse();
+                        Collapse(row);
                     }
+
+                    Score += row.Sum() - copy.Sum();
 
                     if (row.SequenceEqual(copy))
                     {
@@ -235,6 +239,70 @@
                     HasStateChanged = true;
                 }
             }
+        }
+
+        public void Collapse(int[] values)
+        {
+            var dimension = values.Length;
+            var origin = 0;
+            var next = 0;
+
+            while (origin <= dimension - 1 && next < dimension)
+            {
+                if (origin + 1 == values.Length)
+                {
+                    break;
+                }
+
+                next = GetNextValueIndex(values, origin + 1);
+
+                var originaValue = values[origin];
+                var nextValue = values[next];
+
+                if (next == dimension - 1 && nextValue == 0)
+                {
+                    break;
+                }
+
+                if (originaValue == nextValue)
+                {
+                    var newValue = originaValue + nextValue;
+                    values[origin] = newValue;
+                    values[next] = 0;
+                    Score += newValue;
+                    origin++;
+                }
+                else if (originaValue == 0)
+                {
+                    values[origin] = nextValue;
+                    values[next] = 0;
+                }
+                else
+                {
+                    origin++;
+                }
+            }
+        }
+
+        private static int GetNextValueIndex(int[] values, int startIndex)
+        {
+            if (startIndex == values.Length)
+            {
+                return startIndex - 1;
+            }
+            else if (startIndex == values.Length - 1)
+            {
+                return startIndex;
+            }
+
+            var len = values.Length - 1;
+
+            while (startIndex < len && values[startIndex] == 0)
+            {
+                startIndex++;
+            }
+
+            return startIndex;
         }
 
         #endregion
@@ -332,6 +400,11 @@
 
         private bool ReachedTarget()
         {
+            if (Dimension == 0)
+            {
+                return false;
+            }
+
             return _board.AsParallel().WithDegreeOfParallelism(Dimension).Any(x => x.Any(y => y == Target));
         }
 
@@ -346,7 +419,7 @@
             {
                 var copy = new int[row.Length];
                 row.CopyTo(copy, 0);
-                copy.Collapse();
+                Collapse(copy);
 
                 if (row.SequenceEqual(copy) || copy.Any(x => x == 0))
                 {
@@ -368,7 +441,7 @@
 
                 var copy = new int[column.Length];
                 column.CopyTo(copy, 0);
-                copy.Collapse();
+                Collapse(copy);
 
 
                 if (copy.SequenceEqual(column) || copy.Any(x => x == 0))
