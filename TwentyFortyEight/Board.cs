@@ -25,6 +25,8 @@
 
         private int _target = 2048;
 
+        private readonly Random _random;
+
         public GameStatus GameStatus => GetGameStatus();
 
         public bool HasStateChanged { get; set; } = true;
@@ -41,8 +43,9 @@
             }
         }
 
-        public Board(int dimension, int randomStartingLocations = 2)
+        public Board(int dimension, int randomStartingLocations = 2, int? seed = null)
         {
+            _random = !seed.HasValue ? Random.Shared : new Random(seed.Value);
             _board = new List<int[]>();
             Initialize(dimension, randomStartingLocations);
         }
@@ -344,6 +347,11 @@
             return GameStatus.InProgress;
         }
 
+        public SaveState Save()
+        {
+            return new SaveState(_board);
+        }
+
         private bool TryGetColumn(int index, out int[] column)
         {
             column = _board.Select(x => x[index]).ToArray();
@@ -391,9 +399,9 @@
                 return;
             }
 
-            var randCoord = Random.Shared.Next(coords.Count);
+            var randCoord = _random.Next(coords.Count);
             var location = coords[randCoord];
-            var flip = Random.Shared.Next(0, 2);
+            var flip = _random.Next(0, 2);
 
             this[location] = flip > 0 ? 2 : 4;
         }
